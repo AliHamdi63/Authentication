@@ -1,11 +1,13 @@
 require("dotenv").config({ path: './.env' });
-const { API_PORT, MONGO_URI } = process.env;
-
-const mongoose = require('mongoose')
+require("./config/database").connect();
+// const app = require("./app");
 const express = require('express')
+
 const app = express()
 
+const { API_PORT } = process.env;
 const PORT = process.env.PORT || API_PORT
+
 
 
 const userRouter = require('./routes/users')
@@ -24,12 +26,6 @@ app.use('/', userRouter);
 app.use('/', authRouter);
 
 
-
-mongoose.connect(MONGO_URI, (err) => {
-    if (!err) return console.log("DB connected Successfully!");
-
-    console.log(err);
-})
 
 
 app.listen(PORT, (error) => {

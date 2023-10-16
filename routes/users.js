@@ -24,19 +24,25 @@ router.get('/', async (req, res) => {
 router.post('/register', async (req, res) => {
 
     try {
-
+        // Get user input
         const { firstName, lastName, email, password } = req.body;
 
+        // Validate user input
         if (!(email && password && firstName && lastName)) {
             res.status(400).json({ Notice: "All input is required" });
+            // res.status(400).send("All input is required");
         }
 
+        // check if user already exist
+        // Validate if user exist in our database
         const oldUser = await UserModel.findOne({ email });
         // console.log(oldUser)
         if (oldUser) {
-            return res.json({ Error: "User Already Exist. Please Login" });
+            return res.status(409).send("User Already Exist. Please Login");
+            // return res.json({ Error: "User Already Exist. Please Login" });
         }
 
+        //Encrypt user password
         encryptedPassword = await bcrypt.hash(password, 10);
 
         const user = await UserModel.create({
@@ -46,6 +52,7 @@ router.post('/register', async (req, res) => {
             password: encryptedPassword,
         });
 
+        // Create token
         const token = jwt.sign(
             { user_id: user._id, email },
             TOKEN_KEY,
@@ -54,8 +61,13 @@ router.post('/register', async (req, res) => {
             }
         );
 
+        // save user token
         user.token = token;
-        res.json(user);
+
+        // return new user
+        res.status(201).json(user);
+        // res.json(user);
+
 
     } catch (err) {
         console.log("Error:  ", err);
@@ -68,21 +80,23 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
 
     try {
+        // Get user input
+        const { email, password } = req.body;
 
-        const { _id, email, password } = req.body;
 
-        // console.log(_id, email, password)
-
+        // Validate user input
         if (!(email && password)) {
             res.status(400).send("All input is required");
         }
 
-        const user = await UserModel.findOne({ _id });
+        // Validate if user exist in our database
+        const user = await UserModel.findOne({ email });
 
         // console.log(user)
 
         if (user && (await bcrypt.compare(password, user.password))) {
 
+            // Create token
             const token = jwt.sign(
                 { user_id: user._id, email },
                 TOKEN_KEY,
@@ -91,8 +105,10 @@ router.post('/login', async (req, res) => {
                 }
             );
 
+            // save user token
             user.token = token;
 
+            // user
             res.status(200).json(user);
 
         }
